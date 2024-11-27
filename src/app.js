@@ -4,8 +4,12 @@ const app = express();
 const User = require("./models/user");
 const {validateSignUpData} = require("./utils/validation")
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const {userAuth} = require("./middlewares/auth")
 
 app.use(express.json());
+app.use(cookieParser());
 
 //SignUp API
 app.post("/signUp", async (req,res) => {
@@ -45,6 +49,14 @@ app.post("/login", async (req,res) => {
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if(isPasswordValid) {
+
+            //Create a JWT token
+            const token = await jwt.sign({_id: user._id}, "DEV@Tinder", {expiresIn : "7d"});
+
+            //Add the token to cookie and send the response back to the user
+            res.cookie("token", token, {
+                expires: new Date(Date.now()+ 8 * 3600000)
+            }); 
             res.send("Login Successfull !!!")
         } else {
             throw new Error("Invalid Credentials");
@@ -70,6 +82,24 @@ app.get("/user", async(req,res) => {
         res.status(400).send("Something went wrong");
     }
 });
+
+//Profile API
+app.get("/profile", userAuth, async(req,res) => {
+    try{
+    const user = req.user;
+    res.send(user);
+   }
+   catch(err) {
+    res.status(400).send("ERROR : " + err.message);
+}
+});
+
+app.post("/sendConnectionRequest", userAuth, async (req,res) => {
+    const user = req.user;
+    console.log("Sending a connection request");
+
+    res.send(user.firstName + " sent the connection request")
+})
 
 //Feed Api - GET/feed  - get all the users from the database
 app.get("/feed", async (req,res) => {
