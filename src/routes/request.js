@@ -6,9 +6,7 @@ const requestRouter = express.Router();
 
 //Connection API
 requestRouter.post("/sendConnectionRequest", userAuth, async (req,res) => {
-    const user = req.user;
-    console.log("Sending a connection request");
-
+    const user = req.user; 
     res.send(user.firstName + " sent the connection request")
 })
 
